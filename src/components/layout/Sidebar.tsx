@@ -2,9 +2,10 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, CalendarDays, FileText, Receipt, Box, Bot, Users } from 'lucide-react'
+import { LayoutDashboard, CalendarDays, FileText, Receipt, Box, Bot, Users, LogOut } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/hooks/useAuth'
+import { signout } from '@/actions/auth'
 
 const routes = [
   {
@@ -92,6 +93,17 @@ export function Sidebar() {
             </Link>
           ))}
         </div>
+      </div>
+      <div className="px-3 pb-4">
+        <form action={signout}>
+          <button
+            type="submit"
+            className="group flex w-full cursor-pointer justify-start rounded-lg p-3 text-sm font-medium text-zinc-400 transition hover:bg-white/10 hover:text-white"
+          >
+            <LogOut className="mr-3 h-5 w-5 text-zinc-400 group-hover:text-red-400" />
+            Cerrar sesión
+          </button>
+        </form>
       </div>
     </div>
   )
