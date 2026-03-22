@@ -24,7 +24,13 @@ export default async function AiCopilotPage() {
       <div className="grid grid-cols-1 lg:grid-cols-[1.5fr_1fr] gap-6 flex-1 min-h-[500px]">
         {/* Panel Izquierdo: Chatbot RAG Copilot */}
         <div className="h-full">
-          <DentistCopilot quickPrompts={aiSettings?.quick_prompts} />
+          {aiSettings?.copilot_enabled === false ? (
+            <div className="h-full flex items-center justify-center bg-gray-50 rounded-3xl border border-gray-100 text-gray-400 text-sm">
+              Copiloto Clínico desactivado en Configuración → IA
+            </div>
+          ) : (
+            <DentistCopilot quickPrompts={aiSettings?.quick_prompts} />
+          )}
         </div>
 
         {/* Panel Derecho: Smile Tracker */}

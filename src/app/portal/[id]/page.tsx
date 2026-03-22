@@ -1,6 +1,7 @@
 import { Sparkles, ArrowLeft, Calendar, FileText, CheckCircle2, CircleDashed } from 'lucide-react'
 import { PatientChatbot } from '@/features/patient-portal/components/PatientChatbot'
 import { getJourneyByShareToken } from '@/actions/clinical'
+import { createClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 
 export const metadata = {
@@ -20,6 +21,20 @@ export default async function PatientPortalPage({ params }: { params: Promise<{ 
   // @ts-ignore
   const milestones = journey.treatment_milestones || []
   const nextMilestone = milestones.find((m: { status: string; milestone_date?: string }) => m.status === 'current' || m.status === 'pending')
+
+  // Fetch chatbot greeting + ai settings (anon-accessible)
+  const clinicId: string = journey.clinic_id
+  let chatbotGreeting: string | undefined
+  let patientBotEnabled = true
+  try {
+    const supabase = await createClient()
+    const [notifRes, aiRes] = await Promise.all([
+      supabase.from('notification_settings').select('chatbot_greeting').eq('clinic_id', clinicId).single(),
+      supabase.from('ai_settings').select('patient_bot_enabled').eq('clinic_id', clinicId).single(),
+    ])
+    chatbotGreeting = notifRes.data?.chatbot_greeting ?? undefined
+    patientBotEnabled = aiRes.data?.patient_bot_enabled ?? true
+  } catch { /* fallback to defaults */ }
 
   return (
     <div className="min-h-screen bg-gray-50 flex justify-center text-gray-900 font-sans selection:bg-pink-100 relative">
@@ -101,11 +116,15 @@ export default async function PatientPortalPage({ params }: { params: Promise<{ 
       </div>
       
       {/* Footer Chat Flotante */}
-      <PatientChatbot
-        patientName={patient?.full_name?.split(' ')[0]}
-        treatmentTitle={journey.title}
-        nextAppointment={nextMilestone?.milestone_date}
-      />
+      {patientBotEnabled && (
+        <PatientChatbot
+          patientName={patient?.full_name?.split(' ')[0]}
+          treatmentTitle={journey.title}
+          nextAppointment={nextMilestone?.milestone_date}
+          clinicId={clinicId}
+          greeting={chatbotGreeting}
+        />
+      )}
     </div>
   )
 }

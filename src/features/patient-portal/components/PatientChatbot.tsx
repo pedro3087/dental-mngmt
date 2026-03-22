@@ -10,29 +10,28 @@ interface PatientChatbotProps {
   patientName?: string
   treatmentTitle?: string
   nextAppointment?: string
+  clinicId?: string
+  greeting?: string
 }
 
-const WELCOME_MESSAGE: UIMessage = {
-  id: 'welcome',
-  role: 'assistant',
-  parts: [{ type: 'text', text: '¡Hola! Soy tu asistente de VitalDent. ¿Tienes alguna duda sobre tu tratamiento o próxima cita?' }],
-}
-
-export function PatientChatbot({ patientName, treatmentTitle, nextAppointment }: PatientChatbotProps) {
+export function PatientChatbot({ patientName, treatmentTitle, nextAppointment, clinicId, greeting }: PatientChatbotProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [input, setInput] = useState('')
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
+  const defaultGreeting = greeting
+    || `¡Hola${patientName ? ` ${patientName}` : ''}! Soy tu asistente dental 😊 ¿Tienes alguna duda sobre tu tratamiento o próxima cita?`
+
   const welcomeMsg: UIMessage = {
     id: 'welcome',
     role: 'assistant',
-    parts: [{ type: 'text', text: `¡Hola${patientName ? ` ${patientName}` : ''}! Soy tu asistente de VitalDent. ¿Tienes alguna duda sobre tu tratamiento o próxima cita?` }],
+    parts: [{ type: 'text', text: defaultGreeting }],
   }
 
   const { messages, sendMessage, status } = useChat({
     transport: new DefaultChatTransport({
       api: '/api/patient-chat',
-      body: { patientName, treatmentTitle, nextAppointment },
+      body: { patientName, treatmentTitle, nextAppointment, clinicId },
     }),
     messages: [welcomeMsg],
   })
