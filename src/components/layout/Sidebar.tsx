@@ -2,8 +2,9 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, CalendarDays, FileText, Receipt, Box, Bot } from 'lucide-react'
+import { LayoutDashboard, CalendarDays, FileText, Receipt, Box, Bot, Users } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useAuth } from '@/hooks/useAuth'
 
 const routes = [
   {
@@ -11,41 +12,59 @@ const routes = [
     icon: LayoutDashboard,
     href: '/dashboard',
     color: 'text-sky-500',
+    roles: ['doctor', 'receptionist', 'admin'] as const,
   },
   {
     label: 'Agenda',
     icon: CalendarDays,
     href: '/agenda',
     color: 'text-violet-500',
+    roles: ['doctor', 'receptionist', 'admin'] as const,
+  },
+  {
+    label: 'Pacientes',
+    icon: Users,
+    href: '/pacientes',
+    color: 'text-blue-400',
+    roles: ['doctor', 'receptionist', 'admin'] as const,
   },
   {
     label: 'Clínico',
     icon: FileText,
     href: '/clinical',
     color: 'text-pink-700',
+    roles: ['doctor', 'admin'] as const,         // Recepcionista no tiene acceso
   },
   {
     label: 'Facturación',
     icon: Receipt,
     href: '/billing',
     color: 'text-emerald-500',
+    roles: ['doctor', 'receptionist', 'admin'] as const,
   },
   {
     label: 'Inventario',
     icon: Box,
     href: '/inventory',
     color: 'text-orange-500',
+    roles: ['doctor', 'receptionist', 'admin'] as const,
   },
   {
     label: 'AI Copilot',
     icon: Bot,
     href: '/ai-copilot',
-    color: 'text-zinc-600',
+    color: 'text-zinc-400',
+    roles: ['doctor', 'admin'] as const,         // Recepcionista no tiene acceso
   },
 ]
 
 export function Sidebar() {
   const pathname = usePathname()
+  const { role } = useAuth()
+
+  const visibleRoutes = role
+    ? routes.filter(r => (r.roles as readonly string[]).includes(role))
+    : routes  // Mientras carga, mostrar todas (el middleware ya protege el acceso)
 
   return (
     <div className="flex h-full flex-col space-y-4 bg-gray-900 py-4 text-white">
@@ -57,7 +76,7 @@ export function Sidebar() {
           <h1 className="text-2xl font-bold">VitalDent</h1>
         </Link>
         <div className="space-y-1">
-          {routes.map((route) => (
+          {visibleRoutes.map((route) => (
             <Link
               key={route.href}
               href={route.href}

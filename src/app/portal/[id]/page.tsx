@@ -16,22 +16,23 @@ export default async function PatientPortalPage({ params }: { params: Promise<{ 
      return notFound()
   }
 
-  const patient = journey.patients
+  const patient = journey.patients as { full_name: string } | null
   // @ts-ignore
   const milestones = journey.treatment_milestones || []
+  const nextMilestone = milestones.find((m: { status: string; milestone_date?: string }) => m.status === 'current' || m.status === 'pending')
 
   return (
     <div className="min-h-screen bg-gray-50 flex justify-center text-gray-900 font-sans selection:bg-pink-100 relative">
       {/* Contenedor Mobile-First (Emulando la vista de un smartphone) */}
       <div className="w-full max-w-md bg-white min-h-screen shadow-2xl relative flex flex-col overflow-hidden">
-        
+
         {/* Decorative Background */}
         <div className="absolute top-0 left-0 w-full h-64 bg-gradient-to-br from-pink-500 via-rose-500 to-orange-400 rounded-b-[3rem] opacity-90"></div>
 
         {/* Top Navbar */}
         <div className="relative z-10 px-6 pt-12 pb-6 text-white flex justify-between items-center">
           <div>
-            <p className="text-white/80 text-sm font-medium mb-1">Tu Tratamiento, {patient?.first_name || 'Paciente'}</p>
+            <p className="text-white/80 text-sm font-medium mb-1">Tu Tratamiento, {patient?.full_name?.split(' ')[0] || 'Paciente'}</p>
             <h1 className="text-2xl font-black">{journey.title}</h1>
           </div>
         </div>
@@ -100,7 +101,11 @@ export default async function PatientPortalPage({ params }: { params: Promise<{ 
       </div>
       
       {/* Footer Chat Flotante */}
-      <PatientChatbot />
+      <PatientChatbot
+        patientName={patient?.full_name?.split(' ')[0]}
+        treatmentTitle={journey.title}
+        nextAppointment={nextMilestone?.milestone_date}
+      />
     </div>
   )
 }

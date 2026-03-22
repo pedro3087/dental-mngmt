@@ -3,9 +3,20 @@
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import type { User } from '@supabase/supabase-js'
-import type { Profile } from '@/types/database'
+import type { Profile, UserRole } from '@/types/database'
 
-export function useAuth() {
+interface UseAuthReturn {
+  user: User | null
+  profile: Profile | null
+  role: UserRole | null
+  clinic_id: string | null
+  loading: boolean
+  isDoctor: boolean
+  isReceptionist: boolean
+  isAdmin: boolean
+}
+
+export function useAuth(): UseAuthReturn {
   const [user, setUser] = useState<User | null>(null)
   const [profile, setProfile] = useState<Profile | null>(null)
   const [loading, setLoading] = useState(true)
@@ -20,19 +31,15 @@ export function useAuth() {
         .eq('id', userId)
         .single()
 
-      setProfile(data)
+      setProfile(data as Profile | null)
     }
 
-    // Get initial user
     supabase.auth.getUser().then(({ data: { user } }) => {
       setUser(user)
-      if (user) {
-        getProfile(user.id)
-      }
+      if (user) getProfile(user.id)
       setLoading(false)
     })
 
-    // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (_event, session) => {
         const currentUser = session?.user ?? null
@@ -49,5 +56,16 @@ export function useAuth() {
     return () => subscription.unsubscribe()
   }, [])
 
-  return { user, profile, loading }
+  const role = profile?.role ?? null
+
+  return {
+    user,
+    profile,
+    role,
+    clinic_id: profile?.clinic_id ?? null,
+    loading,
+    isDoctor: role === 'doctor',
+    isReceptionist: role === 'receptionist',
+    isAdmin: role === 'admin',
+  }
 }
