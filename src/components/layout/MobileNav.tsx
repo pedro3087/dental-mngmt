@@ -16,7 +16,7 @@ const routes = [
   { label: 'Facturación', icon: Receipt, href: '/billing', color: 'text-emerald-500', roles: ['doctor', 'receptionist', 'admin'] },
   { label: 'Inventario', icon: Box, href: '/inventory', color: 'text-orange-500', roles: ['doctor', 'receptionist', 'admin'] },
   { label: 'AI Copilot', icon: Bot, href: '/ai-copilot', color: 'text-zinc-400', roles: ['doctor', 'admin'] },
-  { label: 'Configuración', icon: Settings, href: '/settings', color: 'text-gray-400', roles: ['admin'] },
+  { label: 'Configuración', icon: Settings, href: '/settings', color: 'text-gray-400', roles: ['doctor', 'admin'] },
 ]
 
 export function MobileNav() {

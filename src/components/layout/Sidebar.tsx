@@ -62,7 +62,7 @@ const routes = [
     icon: Settings,
     href: '/settings',
     color: 'text-gray-400',
-    roles: ['admin'] as const,
+    roles: ['doctor', 'admin'] as const,
   },
 ]
 
