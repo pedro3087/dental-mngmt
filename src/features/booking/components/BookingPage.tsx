@@ -8,22 +8,13 @@ import { ChevronLeft, ChevronRight, Clock, MapPin, Phone, Check, Calendar, Loade
 interface Clinic { id: string; name: string; phone: string; address: string }
 
 interface Service {
-  id: string; label: string; emoji: string; duration: number
-  desc: string; tag?: string; accent: string
+  id: string; label: string; emoji: string; duration_min: number
+  description: string | null; tag?: string | null; accent: string
 }
 
 interface BusySlot { slot_start: string; duration_min: number }
 
 // ─── Config ───────────────────────────────────────────────────────────────────
-
-const SERVICES: Service[] = [
-  { id: 'consulta',       label: 'Consulta General',   emoji: '🦷', duration: 30,  desc: 'Primera visita, revisión y diagnóstico completo', accent: 'blue' },
-  { id: 'limpieza',       label: 'Limpieza Dental',    emoji: '✨', duration: 60,  desc: 'Limpieza profunda y eliminación de sarro', tag: 'Popular', accent: 'cyan' },
-  { id: 'blanqueamiento', label: 'Blanqueamiento LED', emoji: '⚡', duration: 90,  desc: 'Hasta 8 tonos más blanco en una sesión', tag: 'Nuevo', accent: 'amber' },
-  { id: 'ortodoncia',     label: 'Ortodoncia',         emoji: '🔧', duration: 60,  desc: 'Brackets, alineadores transparentes y ajustes', accent: 'violet' },
-  { id: 'extraccion',     label: 'Extracción',         emoji: '💊', duration: 45,  desc: 'Extracción simple o quirúrgica sin dolor', accent: 'rose' },
-  { id: 'implante',       label: 'Implante Dental',    emoji: '🏆', duration: 120, desc: 'Consulta y plan personalizado de implante', accent: 'emerald' },
-]
 
 const ACCENT: Record<string, { border: string; bg: string; text: string; badge: string }> = {
   blue:    { border: 'border-blue-500',    bg: 'bg-blue-50',    text: 'text-blue-700',    badge: 'bg-blue-100 text-blue-700' },
@@ -178,14 +169,14 @@ function LeftPanel({ clinic }: { clinic: Clinic }) {
 
 // ─── Step 1: Service selection ────────────────────────────────────────────────
 
-function ServiceStep({ onSelect }: { onSelect: (s: Service) => void }) {
+function ServiceStep({ services, onSelect }: { services: Service[]; onSelect: (s: Service) => void }) {
   return (
     <div className="animate-in fade-in slide-in-from-right-4 duration-300">
       <h3 className="text-2xl font-bold text-gray-900 mb-1">Qué servicio necesitas?</h3>
       <p className="text-gray-500 text-sm mb-6">Selecciona el tratamiento para ver disponibilidad</p>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        {SERVICES.map(s => {
-          const a = ACCENT[s.accent]
+        {services.map(s => {
+          const a = ACCENT[s.accent] ?? ACCENT['blue']
           return (
             <button
               key={s.id}
@@ -197,10 +188,10 @@ function ServiceStep({ onSelect }: { onSelect: (s: Service) => void }) {
               )}
               <div className="text-2xl mb-2">{s.emoji}</div>
               <div className="font-semibold text-gray-900 text-sm pr-12">{s.label}</div>
-              <div className="text-xs text-gray-500 mt-0.5 pr-12">{s.desc}</div>
+              <div className="text-xs text-gray-500 mt-0.5 pr-12">{s.description}</div>
               <div className={`flex items-center gap-1 mt-2 text-xs font-medium text-gray-400 group-hover:${a.text} transition-colors`}>
                 <Clock className="w-3.5 h-3.5" />
-                {s.duration} min
+                {s.duration_min} min
               </div>
             </button>
           )
@@ -213,9 +204,10 @@ function ServiceStep({ onSelect }: { onSelect: (s: Service) => void }) {
 // ─── Step 2: Date + Time ──────────────────────────────────────────────────────
 
 function DateTimeStep({
-  service, clinicId, onSelect, onBack,
+  service, clinicId, openDays, startHour, endHour, slotInterval, onSelect, onBack,
 }: {
   service: Service; clinicId: string
+  openDays: number[]; startHour: number; endHour: number; slotInterval: number
   onSelect: (date: string, time: string) => void; onBack: () => void
 }) {
   const today = new Date()
@@ -226,9 +218,9 @@ function DateTimeStep({
   const [busy,     setBusy]     = useState<BusySlot[]>([])
   const [loading,  setLoading]  = useState(false)
 
-  const cells   = getMonthCells(calYear, calMonth)
+  const cells    = getMonthCells(calYear, calMonth)
   const todayStr = toDateStr(today)
-  const allSlots = generateTimeSlots()
+  const allSlots = generateTimeSlots(startHour, endHour, slotInterval)
 
   const fetchBusy = useCallback(async (date: string) => {
     setLoading(true)
@@ -291,7 +283,7 @@ function DateTimeStep({
               if (!date) return <div key={`e-${i}`} />
               const str      = toDateStr(date)
               const isPast   = str < todayStr
-              const isSun    = date.getDay() === 0
+              const isSun    = !openDays.includes(date.getDay())
               const isToday  = str === todayStr
               const isSel    = str === selDate
               const disabled = isPast || isSun
@@ -400,7 +392,7 @@ function PatientStep({
           phone:       form.phone,
           email:       form.email || '',
           scheduledAt,
-          durationMin: service.duration,
+          durationMin: service.duration_min,
           serviceType: service.label,
           notes:       form.notes || null,
         }),
@@ -433,7 +425,7 @@ function PatientStep({
           <span className="text-xl">{service.emoji}</span>
           <div>
             <p className="font-semibold text-gray-900">{service.label}</p>
-            <p className="text-gray-500 text-xs">{service.duration} min</p>
+            <p className="text-gray-500 text-xs">{service.duration_min} min</p>
           </div>
         </div>
         <div className="hidden sm:block w-px h-8 bg-blue-200" />
@@ -539,7 +531,7 @@ function ConfirmationScreen({
           </div>
           <div>
             <p className="font-semibold text-gray-900">{service.label}</p>
-            <p className="text-xs text-gray-500">{service.duration} min</p>
+            <p className="text-xs text-gray-500">{service.duration_min} min</p>
           </div>
         </div>
         <div className="h-px bg-gray-200" />
@@ -579,7 +571,16 @@ function ConfirmationScreen({
 
 // ─── Main export ──────────────────────────────────────────────────────────────
 
-export function BookingPage({ clinic }: { clinic: Clinic }) {
+export function BookingPage({
+  clinicId, clinicName, clinicPhone, clinicAddress,
+  services, startHour, endHour, slotInterval, openDays,
+}: {
+  clinicId: string; clinicName: string; clinicPhone: string; clinicAddress: string
+  services: Service[]
+  startHour: number; endHour: number; slotInterval: number; openDays: number[]
+}) {
+  const clinic: Clinic = { id: clinicId, name: clinicName, phone: clinicPhone, address: clinicAddress }
+
   type Step = 1 | 2 | 3 | 'confirmed'
   const [step,    setStep]    = useState<Step>(1)
   const [service, setService] = useState<Service | null>(null)
@@ -605,12 +606,16 @@ export function BookingPage({ clinic }: { clinic: Clinic }) {
           {step !== 'confirmed' && <StepIndicator current={step as number} />}
 
           {step === 1 && (
-            <ServiceStep onSelect={s => { setService(s); setStep(2) }} />
+            <ServiceStep services={services} onSelect={s => { setService(s); setStep(2) }} />
           )}
           {step === 2 && service && (
             <DateTimeStep
               service={service}
               clinicId={clinic.id}
+              openDays={openDays}
+              startHour={startHour}
+              endHour={endHour}
+              slotInterval={slotInterval}
               onBack={() => setStep(1)}
               onSelect={(d, t) => { setDate(d); setTime(t); setStep(3) }}
             />

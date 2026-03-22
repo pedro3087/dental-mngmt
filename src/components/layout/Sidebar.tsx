@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, CalendarDays, FileText, Receipt, Box, Bot, Users, LogOut } from 'lucide-react'
+import { LayoutDashboard, CalendarDays, FileText, Receipt, Box, Bot, Users, LogOut, Settings } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/hooks/useAuth'
 import { signout } from '@/actions/auth'
@@ -55,7 +55,14 @@ const routes = [
     icon: Bot,
     href: '/ai-copilot',
     color: 'text-zinc-400',
-    roles: ['doctor', 'admin'] as const,         // Recepcionista no tiene acceso
+    roles: ['doctor', 'admin'] as const,
+  },
+  {
+    label: 'Configuración',
+    icon: Settings,
+    href: '/settings',
+    color: 'text-gray-400',
+    roles: ['admin'] as const,
   },
 ]
 
