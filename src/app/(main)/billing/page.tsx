@@ -2,6 +2,7 @@ import { InvoiceList } from '@/features/billing/components/InvoiceList'
 import { FastInvoiceWidget } from '@/features/billing/components/FastInvoiceWidget'
 import { Landmark, TrendingUp, AlertCircle, RefreshCw } from 'lucide-react'
 import { getBillingStats, getInvoices } from '@/actions/billing'
+import { getBillingConfig } from '@/actions/settings'
 import { createClient } from '@/lib/supabase/server'
 
 export const metadata = { title: 'Facturación CFDI 4.0 | VitalDent' }
@@ -15,7 +16,7 @@ export default async function BillingPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  const [stats, invoicesResult, patientsResult] = await Promise.all([
+  const [stats, invoicesResult, patientsResult, billingConfig] = await Promise.all([
     getBillingStats(),
     getInvoices(50),
     user
@@ -24,6 +25,7 @@ export default async function BillingPage() {
           .select('id, full_name, rfc')
           .order('full_name')
       : Promise.resolve({ data: [] }),
+    getBillingConfig(),
   ])
 
   const invoices = invoicesResult.data ?? []
@@ -93,7 +95,10 @@ export default async function BillingPage() {
           <InvoiceList initialInvoices={invoices} />
         </div>
         <div className="h-full">
-          <FastInvoiceWidget patients={patients} />
+          <FastInvoiceWidget
+            patients={patients}
+            defaults={billingConfig.billing ?? undefined}
+          />
         </div>
       </div>
     </div>

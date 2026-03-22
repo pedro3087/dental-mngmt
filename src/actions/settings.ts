@@ -3,6 +3,33 @@
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+export interface ClinicProfile {
+  id: string
+  name: string
+  phone: string | null
+  address: string | null
+  rfc: string | null
+  logo_url: string | null
+  primary_color: string | null
+}
+
+export interface BillingSettings {
+  clinic_id: string
+  tax_rate: number
+  payment_method: string
+  payment_form: string
+  cfdi_use_default: string
+}
+
+export interface PacCredentials {
+  provider: string
+  username: string
+  password: string
+  sandbox: boolean
+}
+
 export interface BookingService {
   id: string
   clinic_id: string
@@ -168,5 +195,134 @@ export async function deleteBookingService(serviceId: string) {
   if (error) return { error: error.message }
   revalidatePath('/settings')
   revalidatePath('/book')
+  return { success: true }
+}
+
+// ─── Clinic Profile ───────────────────────────────────────────────────────────
+
+export async function getClinicProfile() {
+  const supabase = await createClient()
+  const profile = await getClinicId()
+  if (!profile?.clinic_id) return null
+
+  const { data } = await supabase
+    .from('clinics')
+    .select('id, name, phone, address, rfc, logo_url, primary_color')
+    .eq('id', profile.clinic_id)
+    .single()
+
+  return data as ClinicProfile | null
+}
+
+export async function updateClinicProfile(data: {
+  name: string
+  phone: string
+  address: string
+  rfc: string
+  logo_url: string
+  primary_color: string
+}) {
+  const supabase = await createClient()
+  const profile = await getClinicId()
+  if (!profile?.clinic_id) return { error: 'No autorizado' }
+  if (profile.role !== 'admin') return { error: 'Solo administradores pueden editar el perfil' }
+
+  const { error } = await supabase
+    .from('clinics')
+    .update({
+      name:          data.name,
+      phone:         data.phone || null,
+      address:       data.address || null,
+      rfc:           data.rfc || null,
+      logo_url:      data.logo_url || null,
+      primary_color: data.primary_color || null,
+      updated_at:    new Date().toISOString(),
+    })
+    .eq('id', profile.clinic_id)
+
+  if (error) return { error: error.message }
+  revalidatePath('/settings')
+  return { success: true }
+}
+
+// ─── Billing Settings ─────────────────────────────────────────────────────────
+
+export async function getBillingConfig() {
+  const supabase = await createClient()
+  const profile = await getClinicId()
+  if (!profile?.clinic_id) return { billing: null, pac: null }
+
+  const [billingRes, clinicRes] = await Promise.all([
+    supabase
+      .from('billing_settings')
+      .select('*')
+      .eq('clinic_id', profile.clinic_id)
+      .single(),
+    supabase
+      .from('clinics')
+      .select('pac_credentials')
+      .eq('id', profile.clinic_id)
+      .single(),
+  ])
+
+  return {
+    billing: billingRes.data as BillingSettings | null,
+    pac:     (clinicRes.data?.pac_credentials ?? null) as PacCredentials | null,
+  }
+}
+
+export async function updateBillingSettings(data: {
+  taxRate: number
+  paymentMethod: string
+  paymentForm: string
+  cfdiUseDefault: string
+}) {
+  const supabase = await createClient()
+  const profile = await getClinicId()
+  if (!profile?.clinic_id) return { error: 'No autorizado' }
+
+  const { error } = await supabase
+    .from('billing_settings')
+    .upsert({
+      clinic_id:        profile.clinic_id,
+      tax_rate:         data.taxRate,
+      payment_method:   data.paymentMethod,
+      payment_form:     data.paymentForm,
+      cfdi_use_default: data.cfdiUseDefault,
+      updated_at:       new Date().toISOString(),
+    }, { onConflict: 'clinic_id' })
+
+  if (error) return { error: error.message }
+  revalidatePath('/settings')
+  revalidatePath('/billing')
+  return { success: true }
+}
+
+export async function updatePacCredentials(data: {
+  provider: string
+  username: string
+  password: string
+  sandbox: boolean
+}) {
+  const supabase = await createClient()
+  const profile = await getClinicId()
+  if (!profile?.clinic_id) return { error: 'No autorizado' }
+  if (profile.role !== 'admin') return { error: 'Solo administradores pueden configurar el PAC' }
+
+  const { error } = await supabase
+    .from('clinics')
+    .update({
+      pac_credentials: {
+        provider: data.provider,
+        username: data.username,
+        password: data.password,
+        sandbox:  data.sandbox,
+      },
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', profile.clinic_id)
+
+  if (error) return { error: error.message }
+  revalidatePath('/settings')
   return { success: true }
 }

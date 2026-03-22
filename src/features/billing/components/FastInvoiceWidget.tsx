@@ -5,12 +5,14 @@ import { motion } from 'framer-motion'
 import { FileDown, Receipt, ShieldCheck } from 'lucide-react'
 import { createInvoice } from '@/actions/billing'
 import type { Patient } from '@/types/database'
+import type { BillingSettings } from '@/actions/settings'
 
 interface FastInvoiceWidgetProps {
   patients: Pick<Patient, 'id' | 'full_name' | 'rfc'>[]
+  defaults?: Pick<BillingSettings, 'tax_rate' | 'payment_form' | 'cfdi_use_default'>
 }
 
-export function FastInvoiceWidget({ patients }: FastInvoiceWidgetProps) {
+export function FastInvoiceWidget({ patients, defaults }: FastInvoiceWidgetProps) {
   const [isPending, startTransition] = useTransition()
   const [success, setSuccess] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -93,7 +95,7 @@ export function FastInvoiceWidget({ patients }: FastInvoiceWidgetProps) {
               <label className="text-xs font-semibold text-blue-100">IVA %</label>
               <select
                 name="tax_rate"
-                defaultValue="16"
+                defaultValue={String(defaults?.tax_rate ?? 16)}
                 className="w-full bg-white/10 border border-white/20 text-white rounded-xl shadow-inner focus:ring-emerald-400 focus:border-emerald-400 sm:text-sm px-4 py-3 appearance-none"
               >
                 <option value="0" className="text-gray-900">0% (Exento)</option>
@@ -107,7 +109,7 @@ export function FastInvoiceWidget({ patients }: FastInvoiceWidgetProps) {
               <label className="text-xs font-semibold text-blue-100">Uso CFDI</label>
               <select
                 name="cfdi_use"
-                defaultValue="D01"
+                defaultValue={defaults?.cfdi_use_default ?? 'D01'}
                 className="w-full bg-white/10 border border-white/20 text-white rounded-xl shadow-inner focus:ring-emerald-400 focus:border-emerald-400 sm:text-sm px-4 py-3 appearance-none"
               >
                 <option value="G03" className="text-gray-900">G03 - Gastos Generales</option>
@@ -119,7 +121,7 @@ export function FastInvoiceWidget({ patients }: FastInvoiceWidgetProps) {
               <label className="text-xs font-semibold text-blue-100">Forma de Pago</label>
               <select
                 name="payment_form"
-                defaultValue="04"
+                defaultValue={defaults?.payment_form ?? '04'}
                 className="w-full bg-white/10 border border-white/20 text-white rounded-xl shadow-inner focus:ring-emerald-400 focus:border-emerald-400 sm:text-sm px-4 py-3 appearance-none"
               >
                 <option value="01" className="text-gray-900">01 - Efectivo</option>
