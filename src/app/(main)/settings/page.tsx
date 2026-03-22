@@ -29,9 +29,9 @@ export default async function SettingsPage({
       getBookingConfig(),
       getClinicProfile(),
       getBillingConfig(),
-      getTeamMembers(),
-      getNotificationSettings(),
-      getInventorySettings(),
+      getTeamMembers().catch(() => [] as Awaited<ReturnType<typeof getTeamMembers>>),
+      getNotificationSettings().catch(() => null),
+      getInventorySettings().catch(() => null),
     ])
 
   return (

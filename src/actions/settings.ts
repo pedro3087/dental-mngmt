@@ -344,23 +344,27 @@ export async function getTeamMembers(): Promise<TeamMember[]> {
   if (!profile?.clinic_id) return []
 
   const supabase = await createClient()
-  const admin = createAdminClient()
 
-  const [profilesRes, usersRes] = await Promise.all([
-    supabase
-      .from('profiles')
-      .select('id, full_name, role, active, created_at')
-      .eq('clinic_id', profile.clinic_id),
-    admin.auth.admin.listUsers({ perPage: 1000 }),
-  ])
+  const { data: profiles } = await supabase
+    .from('profiles')
+    .select('id, full_name, role, active, created_at')
+    .eq('clinic_id', profile.clinic_id)
 
-  if (!profilesRes.data) return []
+  if (!profiles) return []
 
-  const emailMap = new Map(
-    (usersRes.data?.users ?? []).map(u => [u.id, u.email ?? ''])
-  )
+  // Fetch emails via admin client only if service role key is available
+  let emailMap = new Map<string, string>()
+  if (process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    try {
+      const admin = createAdminClient()
+      const { data } = await admin.auth.admin.listUsers({ perPage: 1000 })
+      emailMap = new Map((data?.users ?? []).map(u => [u.id, u.email ?? '']))
+    } catch {
+      // Admin API unavailable — emails will be empty
+    }
+  }
 
-  return profilesRes.data.map(p => ({
+  return profiles.map(p => ({
     id:         p.id,
     email:      emailMap.get(p.id) ?? '',
     full_name:  p.full_name,
