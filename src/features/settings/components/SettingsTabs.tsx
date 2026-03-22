@@ -1,12 +1,15 @@
 'use client'
 
 import Link from 'next/link'
-import { CalendarDays, Building2, Receipt } from 'lucide-react'
+import { CalendarDays, Building2, Receipt, Users, Bell, Package } from 'lucide-react'
 
 const TABS = [
-  { id: 'reservas',     label: 'Reservas Online', icon: CalendarDays },
-  { id: 'clinica',      label: 'Clínica',          icon: Building2 },
-  { id: 'facturacion',  label: 'Facturación',       icon: Receipt },
+  { id: 'reservas',      label: 'Reservas',      icon: CalendarDays },
+  { id: 'clinica',       label: 'Clínica',        icon: Building2 },
+  { id: 'facturacion',   label: 'Facturación',    icon: Receipt },
+  { id: 'equipo',        label: 'Equipo',         icon: Users },
+  { id: 'notificaciones',label: 'Notificaciones', icon: Bell },
+  { id: 'inventario',    label: 'Inventario',     icon: Package },
 ]
 
 export function SettingsTabs({ activeTab }: { activeTab: string }) {

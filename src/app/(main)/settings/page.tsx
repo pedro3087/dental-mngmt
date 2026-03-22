@@ -1,9 +1,19 @@
-import { getBookingConfig, getClinicProfile, getBillingConfig } from '@/actions/settings'
-import { BookingSettingsPanel } from '@/features/settings/components/BookingSettingsPanel'
-import { ClinicProfilePanel }   from '@/features/settings/components/ClinicProfilePanel'
-import { BillingSettingsPanel } from '@/features/settings/components/BillingSettingsPanel'
-import { SettingsTabs }         from '@/features/settings/components/SettingsTabs'
-import { Settings }             from 'lucide-react'
+import {
+  getBookingConfig,
+  getClinicProfile,
+  getBillingConfig,
+  getTeamMembers,
+  getNotificationSettings,
+  getInventorySettings,
+} from '@/actions/settings'
+import { BookingSettingsPanel }   from '@/features/settings/components/BookingSettingsPanel'
+import { ClinicProfilePanel }     from '@/features/settings/components/ClinicProfilePanel'
+import { BillingSettingsPanel }   from '@/features/settings/components/BillingSettingsPanel'
+import { TeamPanel }              from '@/features/settings/components/TeamPanel'
+import { NotificationsPanel }     from '@/features/settings/components/NotificationsPanel'
+import { InventorySettingsPanel } from '@/features/settings/components/InventorySettingsPanel'
+import { SettingsTabs }           from '@/features/settings/components/SettingsTabs'
+import { Settings }               from 'lucide-react'
 
 export const metadata = { title: 'Configuración — VitalDent' }
 
@@ -14,11 +24,15 @@ export default async function SettingsPage({
 }) {
   const { tab = 'reservas' } = await searchParams
 
-  const [config, clinicProfile, billingConfig] = await Promise.all([
-    getBookingConfig(),
-    getClinicProfile(),
-    getBillingConfig(),
-  ])
+  const [config, clinicProfile, billingConfig, teamMembers, notifSettings, invSettings] =
+    await Promise.all([
+      getBookingConfig(),
+      getClinicProfile(),
+      getBillingConfig(),
+      getTeamMembers(),
+      getNotificationSettings(),
+      getInventorySettings(),
+    ])
 
   return (
     <div className="p-6 max-w-4xl mx-auto">
@@ -51,16 +65,23 @@ export default async function SettingsPage({
             clinicId={config.clinicId ?? ''}
           />
         )}
-
         {tab === 'clinica' && (
           <ClinicProfilePanel initial={clinicProfile} />
         )}
-
         {tab === 'facturacion' && (
           <BillingSettingsPanel
             initialBilling={billingConfig.billing}
             initialPac={billingConfig.pac}
           />
+        )}
+        {tab === 'equipo' && (
+          <TeamPanel initialMembers={teamMembers} />
+        )}
+        {tab === 'notificaciones' && (
+          <NotificationsPanel initial={notifSettings} />
+        )}
+        {tab === 'inventario' && (
+          <InventorySettingsPanel initial={invSettings} />
         )}
       </div>
     </div>

@@ -1,6 +1,7 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { revalidatePath } from 'next/cache'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -324,5 +325,224 @@ export async function updatePacCredentials(data: {
 
   if (error) return { error: error.message }
   revalidatePath('/settings')
+  return { success: true }
+}
+
+// ─── Team Management ─────────────────────────────────────────────────────────
+
+export interface TeamMember {
+  id: string
+  email: string
+  full_name: string | null
+  role: string
+  active: boolean
+  created_at: string
+}
+
+export async function getTeamMembers(): Promise<TeamMember[]> {
+  const profile = await getClinicId()
+  if (!profile?.clinic_id) return []
+
+  const supabase = await createClient()
+  const admin = createAdminClient()
+
+  const [profilesRes, usersRes] = await Promise.all([
+    supabase
+      .from('profiles')
+      .select('id, full_name, role, active, created_at')
+      .eq('clinic_id', profile.clinic_id),
+    admin.auth.admin.listUsers({ perPage: 1000 }),
+  ])
+
+  if (!profilesRes.data) return []
+
+  const emailMap = new Map(
+    (usersRes.data?.users ?? []).map(u => [u.id, u.email ?? ''])
+  )
+
+  return profilesRes.data.map(p => ({
+    id:         p.id,
+    email:      emailMap.get(p.id) ?? '',
+    full_name:  p.full_name,
+    role:       p.role,
+    active:     p.active,
+    created_at: p.created_at,
+  }))
+}
+
+export async function updateMemberRole(userId: string, role: string) {
+  const supabase = await createClient()
+  const profile = await getClinicId()
+  if (!profile?.clinic_id) return { error: 'No autorizado' }
+  if (profile.role !== 'admin') return { error: 'Solo administradores pueden cambiar roles' }
+
+  const { error } = await supabase
+    .from('profiles')
+    .update({ role, updated_at: new Date().toISOString() })
+    .eq('id', userId)
+    .eq('clinic_id', profile.clinic_id)
+
+  if (error) return { error: error.message }
+  revalidatePath('/settings')
+  return { success: true }
+}
+
+export async function deactivateMember(userId: string) {
+  const supabase = await createClient()
+  const profile = await getClinicId()
+  if (!profile?.clinic_id) return { error: 'No autorizado' }
+  if (profile.role !== 'admin') return { error: 'Solo administradores pueden desactivar usuarios' }
+
+  const { data: { user } } = await (await createClient()).auth.getUser()
+  if (user?.id === userId) return { error: 'No puedes desactivarte a ti mismo' }
+
+  const { error } = await supabase
+    .from('profiles')
+    .update({ active: false, updated_at: new Date().toISOString() })
+    .eq('id', userId)
+    .eq('clinic_id', profile.clinic_id)
+
+  if (error) return { error: error.message }
+  revalidatePath('/settings')
+  return { success: true }
+}
+
+export async function inviteTeamMember(email: string, role: string) {
+  const profile = await getClinicId()
+  if (!profile?.clinic_id) return { error: 'No autorizado' }
+  if (profile.role !== 'admin') return { error: 'Solo administradores pueden invitar usuarios' }
+
+  const admin = createAdminClient()
+  const { data, error } = await admin.auth.admin.inviteUserByEmail(email, {
+    data: { clinic_id: profile.clinic_id, role },
+  })
+
+  if (error) return { error: error.message }
+
+  // Crear perfil inmediatamente para que aparezca en la lista
+  if (data.user) {
+    await admin
+      .from('profiles')
+      .upsert({
+        id:         data.user.id,
+        clinic_id:  profile.clinic_id,
+        role,
+        active:     true,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'id' })
+  }
+
+  revalidatePath('/settings')
+  return { success: true }
+}
+
+// ─── Notification Settings ────────────────────────────────────────────────────
+
+export interface NotificationSettings {
+  clinic_id:        string
+  wa_enabled:       boolean
+  email_enabled:    boolean
+  reminder_hours_1: number
+  reminder_hours_2: number
+  reminder_template: string | null
+  chatbot_greeting:  string | null
+}
+
+export async function getNotificationSettings() {
+  const supabase = await createClient()
+  const profile = await getClinicId()
+  if (!profile?.clinic_id) return null
+
+  const { data } = await supabase
+    .from('notification_settings')
+    .select('*')
+    .eq('clinic_id', profile.clinic_id)
+    .single()
+
+  return data as NotificationSettings | null
+}
+
+export async function updateNotificationSettings(data: {
+  waEnabled:        boolean
+  emailEnabled:     boolean
+  reminderHours1:   number
+  reminderHours2:   number
+  reminderTemplate: string
+  chatbotGreeting:  string
+}) {
+  const supabase = await createClient()
+  const profile = await getClinicId()
+  if (!profile?.clinic_id) return { error: 'No autorizado' }
+
+  const { error } = await supabase
+    .from('notification_settings')
+    .upsert({
+      clinic_id:         profile.clinic_id,
+      wa_enabled:        data.waEnabled,
+      email_enabled:     data.emailEnabled,
+      reminder_hours_1:  data.reminderHours1,
+      reminder_hours_2:  data.reminderHours2,
+      reminder_template: data.reminderTemplate || null,
+      chatbot_greeting:  data.chatbotGreeting || null,
+      updated_at:        new Date().toISOString(),
+    }, { onConflict: 'clinic_id' })
+
+  if (error) return { error: error.message }
+  revalidatePath('/settings')
+  return { success: true }
+}
+
+// ─── Inventory Settings ───────────────────────────────────────────────────────
+
+export interface InventorySettings {
+  clinic_id:            string
+  default_min_quantity: number
+  alerts_enabled:       boolean
+  categories:           string[]
+  units:                string[]
+  alert_email:          string | null
+}
+
+export async function getInventorySettings() {
+  const supabase = await createClient()
+  const profile = await getClinicId()
+  if (!profile?.clinic_id) return null
+
+  const { data } = await supabase
+    .from('inventory_settings')
+    .select('*')
+    .eq('clinic_id', profile.clinic_id)
+    .single()
+
+  return data as InventorySettings | null
+}
+
+export async function updateInventorySettings(data: {
+  defaultMinQuantity: number
+  alertsEnabled:      boolean
+  categories:         string[]
+  units:              string[]
+  alertEmail:         string
+}) {
+  const supabase = await createClient()
+  const profile = await getClinicId()
+  if (!profile?.clinic_id) return { error: 'No autorizado' }
+
+  const { error } = await supabase
+    .from('inventory_settings')
+    .upsert({
+      clinic_id:            profile.clinic_id,
+      default_min_quantity: data.defaultMinQuantity,
+      alerts_enabled:       data.alertsEnabled,
+      categories:           data.categories,
+      units:                data.units,
+      alert_email:          data.alertEmail || null,
+      updated_at:           new Date().toISOString(),
+    }, { onConflict: 'clinic_id' })
+
+  if (error) return { error: error.message }
+  revalidatePath('/settings')
+  revalidatePath('/inventory')
   return { success: true }
 }
