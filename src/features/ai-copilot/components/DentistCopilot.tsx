@@ -6,13 +6,16 @@ import { useRef, useEffect, useState } from 'react'
 import { Bot, Send, User, GripHorizontal, AlertCircle } from 'lucide-react'
 import { motion } from 'framer-motion'
 
-const QUICK_PROMPTS = [
+const DEFAULT_QUICK_PROMPTS = [
   'Dame un resumen del último expediente revisado',
   'Estadísticas de ausentismo del mes',
   '¿Cuántas facturas están pendientes de cobro?',
 ]
 
-export function DentistCopilot() {
+export function DentistCopilot({ quickPrompts }: { quickPrompts?: string[] }) {
+  const prompts = quickPrompts?.filter(p => p.trim()).length
+    ? quickPrompts.filter(p => p.trim())
+    : DEFAULT_QUICK_PROMPTS
   const [input, setInput] = useState('')
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
@@ -128,7 +131,7 @@ export function DentistCopilot() {
       {/* Input */}
       <div className="p-4 bg-gray-900/80 backdrop-blur-md border-t border-gray-800/50 z-10">
         <div className="flex justify-center gap-2 mb-3 flex-wrap">
-          {QUICK_PROMPTS.map(p => (
+          {prompts.map(p => (
             <button
               key={p}
               onClick={() => handleQuickPrompt(p)}

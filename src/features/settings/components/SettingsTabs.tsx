@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { CalendarDays, Building2, Receipt, Users, Bell, Package } from 'lucide-react'
+import { CalendarDays, Building2, Receipt, Users, Bell, Package, Bot } from 'lucide-react'
 
 const TABS = [
   { id: 'reservas',      label: 'Reservas',      icon: CalendarDays },
@@ -10,6 +10,7 @@ const TABS = [
   { id: 'equipo',        label: 'Equipo',         icon: Users },
   { id: 'notificaciones',label: 'Notificaciones', icon: Bell },
   { id: 'inventario',    label: 'Inventario',     icon: Package },
+  { id: 'ia',            label: 'IA',             icon: Bot },
 ]
 
 export function SettingsTabs({ activeTab }: { activeTab: string }) {

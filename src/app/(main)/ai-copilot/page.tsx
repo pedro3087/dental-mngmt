@@ -1,11 +1,13 @@
 import { DentistCopilot } from '@/features/ai-copilot/components/DentistCopilot'
 import { SmileTrackerPreview } from '@/features/ai-copilot/components/SmileTrackerPreview'
+import { getAiSettings } from '@/actions/settings'
 
 export const metadata = {
   title: 'AI Suite | VitalDent',
 }
 
-export default function AiCopilotPage() {
+export default async function AiCopilotPage() {
+  const aiSettings = await getAiSettings().catch(() => null)
   return (
     <div className="flex-1 space-y-4 p-8 pt-6 h-[calc(100vh-2rem)] flex flex-col">
       <div className="flex items-center justify-between space-y-2 mb-4 shrink-0">
@@ -22,7 +24,7 @@ export default function AiCopilotPage() {
       <div className="grid grid-cols-1 lg:grid-cols-[1.5fr_1fr] gap-6 flex-1 min-h-[500px]">
         {/* Panel Izquierdo: Chatbot RAG Copilot */}
         <div className="h-full">
-          <DentistCopilot />
+          <DentistCopilot quickPrompts={aiSettings?.quick_prompts} />
         </div>
 
         {/* Panel Derecho: Smile Tracker */}

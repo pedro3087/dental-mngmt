@@ -1,9 +1,29 @@
 import { createOpenAI } from '@ai-sdk/openai'
 import { streamText } from 'ai'
+import { createClient } from '@/lib/supabase/server'
 
 export const maxDuration = 30
 
-const SYSTEM_PROMPT = `Eres el Copiloto Clínico de VitalDent, un asistente de IA especializado para dentistas y personal clínico.
+async function getAiConfig(clinicId: string | null) {
+  if (!clinicId) return { model: 'google/gemini-flash-1.5', clinicName: 'VitalDent' }
+  try {
+    const supabase = await createClient()
+    const { data } = await supabase
+      .from('ai_settings')
+      .select('ai_model, clinic_display_name')
+      .eq('clinic_id', clinicId)
+      .single()
+    return {
+      model:      data?.ai_model            ?? 'google/gemini-flash-1.5',
+      clinicName: data?.clinic_display_name ?? 'VitalDent',
+    }
+  } catch {
+    return { model: 'google/gemini-flash-1.5', clinicName: 'VitalDent' }
+  }
+}
+
+const BASE_SYSTEM_PROMPT = (clinicName: string) =>
+  `Eres el Copiloto Clínico de ${clinicName}, un asistente de IA especializado para dentistas y personal clínico.
 
 Tu rol:
 - Ayudar al dentista a consultar expedientes médicos de pacientes de forma rápida
@@ -20,7 +40,7 @@ Reglas importantes:
 - Si no tienes la información, dilo claramente y sugiere cómo obtenerla`
 
 export async function POST(req: Request) {
-  const { messages, patientContext } = await req.json()
+  const { messages, patientContext, clinicId } = await req.json()
 
   const apiKey = process.env.OPENROUTER_API_KEY
   if (!apiKey) {
@@ -30,17 +50,20 @@ export async function POST(req: Request) {
     })
   }
 
+  const { model, clinicName } = await getAiConfig(clinicId ?? null)
+  const systemPrompt = BASE_SYSTEM_PROMPT(clinicName)
+
   const openrouter = createOpenAI({
     baseURL: 'https://openrouter.ai/api/v1',
     apiKey,
   })
 
   const systemWithContext = patientContext
-    ? `${SYSTEM_PROMPT}\n\n## Contexto del Paciente Activo:\n${patientContext}`
-    : SYSTEM_PROMPT
+    ? `${systemPrompt}\n\n## Contexto del Paciente Activo:\n${patientContext}`
+    : systemPrompt
 
   const result = streamText({
-    model: openrouter('google/gemini-flash-1.5'),
+    model: openrouter(model),
     system: systemWithContext,
     messages,
     maxOutputTokens: 800,

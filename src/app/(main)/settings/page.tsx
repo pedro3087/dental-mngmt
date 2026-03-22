@@ -5,6 +5,7 @@ import {
   getTeamMembers,
   getNotificationSettings,
   getInventorySettings,
+  getAiSettings,
 } from '@/actions/settings'
 import { BookingSettingsPanel }   from '@/features/settings/components/BookingSettingsPanel'
 import { ClinicProfilePanel }     from '@/features/settings/components/ClinicProfilePanel'
@@ -12,6 +13,7 @@ import { BillingSettingsPanel }   from '@/features/settings/components/BillingSe
 import { TeamPanel }              from '@/features/settings/components/TeamPanel'
 import { NotificationsPanel }     from '@/features/settings/components/NotificationsPanel'
 import { InventorySettingsPanel } from '@/features/settings/components/InventorySettingsPanel'
+import { AiSettingsPanel }        from '@/features/settings/components/AiSettingsPanel'
 import { SettingsTabs }           from '@/features/settings/components/SettingsTabs'
 import { Settings }               from 'lucide-react'
 
@@ -24,7 +26,7 @@ export default async function SettingsPage({
 }) {
   const { tab = 'reservas' } = await searchParams
 
-  const [config, clinicProfile, billingConfig, teamMembers, notifSettings, invSettings] =
+  const [config, clinicProfile, billingConfig, teamMembers, notifSettings, invSettings, aiSettings] =
     await Promise.all([
       getBookingConfig(),
       getClinicProfile(),
@@ -32,6 +34,7 @@ export default async function SettingsPage({
       getTeamMembers().catch(() => [] as Awaited<ReturnType<typeof getTeamMembers>>),
       getNotificationSettings().catch(() => null),
       getInventorySettings().catch(() => null),
+      getAiSettings().catch(() => null),
     ])
 
   return (
@@ -82,6 +85,9 @@ export default async function SettingsPage({
         )}
         {tab === 'inventario' && (
           <InventorySettingsPanel initial={invSettings} />
+        )}
+        {tab === 'ia' && (
+          <AiSettingsPanel initial={aiSettings} />
         )}
       </div>
     </div>

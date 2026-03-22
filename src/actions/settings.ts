@@ -550,3 +550,57 @@ export async function updateInventorySettings(data: {
   revalidatePath('/inventory')
   return { success: true }
 }
+
+// ─── AI Settings ──────────────────────────────────────────────────────────────
+
+export interface AiSettings {
+  clinic_id:           string
+  copilot_enabled:     boolean
+  patient_bot_enabled: boolean
+  ai_model:            string
+  clinic_display_name: string | null
+  quick_prompts:       string[]
+}
+
+export async function getAiSettings() {
+  const supabase = await createClient()
+  const profile = await getClinicId()
+  if (!profile?.clinic_id) return null
+
+  const { data } = await supabase
+    .from('ai_settings')
+    .select('*')
+    .eq('clinic_id', profile.clinic_id)
+    .single()
+
+  return data as AiSettings | null
+}
+
+export async function updateAiSettings(data: {
+  copilotEnabled:     boolean
+  patientBotEnabled:  boolean
+  aiModel:            string
+  clinicDisplayName:  string
+  quickPrompts:       string[]
+}) {
+  const supabase = await createClient()
+  const profile = await getClinicId()
+  if (!profile?.clinic_id) return { error: 'No autorizado' }
+
+  const { error } = await supabase
+    .from('ai_settings')
+    .upsert({
+      clinic_id:           profile.clinic_id,
+      copilot_enabled:     data.copilotEnabled,
+      patient_bot_enabled: data.patientBotEnabled,
+      ai_model:            data.aiModel,
+      clinic_display_name: data.clinicDisplayName || null,
+      quick_prompts:       data.quickPrompts,
+      updated_at:          new Date().toISOString(),
+    }, { onConflict: 'clinic_id' })
+
+  if (error) return { error: error.message }
+  revalidatePath('/settings')
+  revalidatePath('/ai-copilot')
+  return { success: true }
+}
