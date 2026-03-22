@@ -255,7 +255,7 @@ function DateTimeStep({
         </button>
         <div>
           <h3 className="text-2xl font-bold text-gray-900">Elige fecha y hora</h3>
-          <p className="text-gray-500 text-sm">{service.emoji} {service.label} · {service.duration} min</p>
+          <p className="text-gray-500 text-sm">{service.emoji} {service.label} · {service.duration_min} min</p>
         </div>
       </div>
 
@@ -324,7 +324,7 @@ function DateTimeStep({
               <p className="text-sm font-medium text-gray-700 mb-3">{formatDate(selDate)}</p>
               <div className="grid grid-cols-3 gap-2 max-h-[280px] overflow-y-auto pr-1">
                 {allSlots.map(slot => {
-                  const occupied = isSlotBusy(slot, selDate, busy, service.duration)
+                  const occupied = isSlotBusy(slot, selDate, busy, service.duration_min)
                   const isSel    = slot === selTime
                   return (
                     <button
