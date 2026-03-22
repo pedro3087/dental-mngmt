@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Menu, X, LayoutDashboard, CalendarDays, FileText, Receipt, Box, Bot, Users, LogOut } from 'lucide-react'
+import { Menu, X, LayoutDashboard, CalendarDays, FileText, Receipt, Box, Bot, Users, LogOut, Settings } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/hooks/useAuth'
 import { signout } from '@/actions/auth'
@@ -16,6 +16,7 @@ const routes = [
   { label: 'Facturación', icon: Receipt, href: '/billing', color: 'text-emerald-500', roles: ['doctor', 'receptionist', 'admin'] },
   { label: 'Inventario', icon: Box, href: '/inventory', color: 'text-orange-500', roles: ['doctor', 'receptionist', 'admin'] },
   { label: 'AI Copilot', icon: Bot, href: '/ai-copilot', color: 'text-zinc-400', roles: ['doctor', 'admin'] },
+  { label: 'Configuración', icon: Settings, href: '/settings', color: 'text-gray-400', roles: ['admin'] },
 ]
 
 export function MobileNav() {
