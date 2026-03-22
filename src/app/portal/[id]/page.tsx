@@ -1,5 +1,6 @@
-import { Sparkles, ArrowLeft, Calendar, FileText, CheckCircle2, CircleDashed } from 'lucide-react'
+import { CheckCircle2 } from 'lucide-react'
 import { PatientChatbot } from '@/features/patient-portal/components/PatientChatbot'
+import { SmileTracker } from '@/features/patient-portal/components/SmileTracker'
 import { getJourneyByShareToken } from '@/actions/clinical'
 import { createClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
@@ -21,6 +22,8 @@ export default async function PatientPortalPage({ params }: { params: Promise<{ 
   // @ts-ignore
   const milestones = journey.treatment_milestones || []
   const nextMilestone = milestones.find((m: { status: string; milestone_date?: string }) => m.status === 'current' || m.status === 'pending')
+  const completedMilestones = milestones.filter((m: { status: string }) => m.status === 'completed').length
+  const totalMilestones = milestones.length
 
   // Fetch chatbot greeting + ai settings (anon-accessible)
   const clinicId: string = journey.clinic_id
@@ -55,30 +58,12 @@ export default async function PatientPortalPage({ params }: { params: Promise<{ 
         {/* Contenido scrolleable */}
         <div className="relative z-10 flex-1 overflow-y-auto px-6 pb-24 space-y-8 scrollbar-hide">
           
-          {/* Tracker Card */}
-          <div className="bg-white rounded-3xl p-5 shadow-[0_8px_30px_rgb(0,0,0,0.08)] border border-gray-100 mt-2">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="font-bold text-gray-900 flex items-center gap-2">
-                <Sparkles className="w-5 h-5 text-pink-500" /> Progreso Visual
-              </h2>
-              <span className="text-pink-600 bg-pink-50 px-2.5 py-1 rounded-lg text-xs font-black">
-                {journey.progress_percentage}% completado
-              </span>
-            </div>
-            
-            <div className="w-full h-48 bg-gray-100 rounded-2xl overflow-hidden relative group">
-              {/* Imagen Fija Simulando Comparación - En un componente real usaríamos el slider aquí */}
-              <div 
-                className="absolute inset-0 bg-cover bg-center"
-                style={{ backgroundImage: 'url(https://images.unsplash.com/photo-1606811841689-23dfddce3e95?q=80&w=800&auto=format&fit=crop)' }}
-              >
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-4">
-                   <p className="text-white font-medium text-sm">Mes 6 (Actual)</p>
-                </div>
-              </div>
-            </div>
-            <p className="text-xs text-center text-gray-400 mt-3 font-medium">✨ Tu sonrisa está evolucionando según lo planeado.</p>
-          </div>
+          <SmileTracker
+            progress={journey.progress_percentage}
+            completedMilestones={completedMilestones}
+            totalMilestones={totalMilestones}
+            nextAppointment={nextMilestone?.milestone_date ?? null}
+          />
 
           {/* Timeline de Tratamiento */}
           <div>
