@@ -30,18 +30,22 @@ ALTER TABLE booking_services ENABLE ROW LEVEL SECURITY;
 ALTER TABLE booking_settings ENABLE ROW LEVEL SECURITY;
 
 -- Clinic staff can read/write their own clinic config
+DROP POLICY IF EXISTS "staff_booking_services_all" ON booking_services;
 CREATE POLICY "staff_booking_services_all" ON booking_services
   USING  (clinic_id IN (SELECT clinic_id FROM profiles WHERE id = auth.uid()))
   WITH CHECK (clinic_id IN (SELECT clinic_id FROM profiles WHERE id = auth.uid()));
 
+DROP POLICY IF EXISTS "staff_booking_settings_all" ON booking_settings;
 CREATE POLICY "staff_booking_settings_all" ON booking_settings
   USING  (clinic_id IN (SELECT clinic_id FROM profiles WHERE id = auth.uid()))
   WITH CHECK (clinic_id IN (SELECT clinic_id FROM profiles WHERE id = auth.uid()));
 
 -- Anon can read active services + settings (for public booking page)
+DROP POLICY IF EXISTS "anon_read_active_services" ON booking_services;
 CREATE POLICY "anon_read_active_services" ON booking_services
   FOR SELECT TO anon USING (active = true);
 
+DROP POLICY IF EXISTS "anon_read_booking_settings" ON booking_settings;
 CREATE POLICY "anon_read_booking_settings" ON booking_settings
   FOR SELECT TO anon USING (booking_active = true);
 
