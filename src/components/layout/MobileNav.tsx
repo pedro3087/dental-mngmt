@@ -33,7 +33,7 @@ export function MobileNav() {
     return () => { document.body.style.overflow = '' }
   }, [open])
 
-  const visibleRoutes = role ? routes.filter(r => r.roles.includes(role)) : routes
+  const visibleRoutes = role ? routes.filter(r => r.roles.includes(role)) : []
 
   return (
     <>

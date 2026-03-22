@@ -72,7 +72,7 @@ export function Sidebar() {
 
   const visibleRoutes = role
     ? routes.filter(r => (r.roles as readonly string[]).includes(role))
-    : routes  // Mientras carga, mostrar todas (el middleware ya protege el acceso)
+    : []
 
   return (
     <div className="flex h-full flex-col space-y-4 bg-gray-900 py-4 text-white">
