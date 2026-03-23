@@ -1,3 +1,4 @@
+import { Suspense } from 'react'
 import {
   getBookingConfig,
   getClinicProfile,
@@ -15,9 +16,45 @@ import { NotificationsPanel }     from '@/features/settings/components/Notificat
 import { InventorySettingsPanel } from '@/features/settings/components/InventorySettingsPanel'
 import { AiSettingsPanel }        from '@/features/settings/components/AiSettingsPanel'
 import { SettingsTabs }           from '@/features/settings/components/SettingsTabs'
+import { PageLoader }             from '@/shared/components/PageLoader'
 import { Settings }               from 'lucide-react'
 
 export const metadata = { title: 'Configuración — VitalDent' }
+
+async function BookingTab() {
+  const config = await getBookingConfig()
+  return <BookingSettingsPanel initialServices={config.services} initialSettings={config.settings} clinicId={config.clinicId ?? ''} />
+}
+
+async function ClinicTab() {
+  const clinicProfile = await getClinicProfile()
+  return <ClinicProfilePanel initial={clinicProfile} />
+}
+
+async function BillingTab() {
+  const billingConfig = await getBillingConfig()
+  return <BillingSettingsPanel initialBilling={billingConfig.billing} initialPac={billingConfig.pac} />
+}
+
+async function TeamTab() {
+  const teamMembers = await getTeamMembers().catch(() => [] as Awaited<ReturnType<typeof getTeamMembers>>)
+  return <TeamPanel initialMembers={teamMembers} />
+}
+
+async function NotificationsTab() {
+  const notifSettings = await getNotificationSettings().catch(() => null)
+  return <NotificationsPanel initial={notifSettings} />
+}
+
+async function InventoryTab() {
+  const invSettings = await getInventorySettings().catch(() => null)
+  return <InventorySettingsPanel initial={invSettings} />
+}
+
+async function AiTab() {
+  const aiSettings = await getAiSettings().catch(() => null)
+  return <AiSettingsPanel initial={aiSettings} />
+}
 
 export default async function SettingsPage({
   searchParams,
@@ -25,17 +62,6 @@ export default async function SettingsPage({
   searchParams: Promise<{ tab?: string }>
 }) {
   const { tab = 'reservas' } = await searchParams
-
-  const [config, clinicProfile, billingConfig, teamMembers, notifSettings, invSettings, aiSettings] =
-    await Promise.all([
-      getBookingConfig(),
-      getClinicProfile(),
-      getBillingConfig(),
-      getTeamMembers().catch(() => [] as Awaited<ReturnType<typeof getTeamMembers>>),
-      getNotificationSettings().catch(() => null),
-      getInventorySettings().catch(() => null),
-      getAiSettings().catch(() => null),
-    ])
 
   return (
     <div className="p-6 max-w-4xl mx-auto">
@@ -60,35 +86,16 @@ export default async function SettingsPage({
 
       <SettingsTabs activeTab={tab} />
 
-      <div className="mt-6">
-        {tab === 'reservas' && (
-          <BookingSettingsPanel
-            initialServices={config.services}
-            initialSettings={config.settings}
-            clinicId={config.clinicId ?? ''}
-          />
-        )}
-        {tab === 'clinica' && (
-          <ClinicProfilePanel initial={clinicProfile} />
-        )}
-        {tab === 'facturacion' && (
-          <BillingSettingsPanel
-            initialBilling={billingConfig.billing}
-            initialPac={billingConfig.pac}
-          />
-        )}
-        {tab === 'equipo' && (
-          <TeamPanel initialMembers={teamMembers} />
-        )}
-        {tab === 'notificaciones' && (
-          <NotificationsPanel initial={notifSettings} />
-        )}
-        {tab === 'inventario' && (
-          <InventorySettingsPanel initial={invSettings} />
-        )}
-        {tab === 'ia' && (
-          <AiSettingsPanel initial={aiSettings} />
-        )}
+      <div className="mt-6 min-h-[200px]">
+        <Suspense key={tab} fallback={<PageLoader />}>
+          {tab === 'reservas'       && <BookingTab />}
+          {tab === 'clinica'        && <ClinicTab />}
+          {tab === 'facturacion'    && <BillingTab />}
+          {tab === 'equipo'         && <TeamTab />}
+          {tab === 'notificaciones' && <NotificationsTab />}
+          {tab === 'inventario'     && <InventoryTab />}
+          {tab === 'ia'             && <AiTab />}
+        </Suspense>
       </div>
     </div>
   )
