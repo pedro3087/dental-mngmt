@@ -1,6 +1,6 @@
 # PRP-002: Settings — Equipo, Notificaciones e Inventario
 
-> **Estado**: PENDIENTE
+> **Estado**: COMPLETADO
 > **Fecha**: 2026-03-22
 > **Proyecto**: dental-mngmt
 
