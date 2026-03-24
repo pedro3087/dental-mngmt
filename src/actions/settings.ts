@@ -226,7 +226,7 @@ export async function updateClinicProfile(data: {
   const supabase = await createClient()
   const profile = await getClinicId()
   if (!profile?.clinic_id) return { error: 'No autorizado' }
-  if (profile.role !== 'admin') return { error: 'Solo administradores pueden editar el perfil' }
+  if (profile.role !== 'admin' && profile.role !== 'doctor') return { error: 'Solo administradores y doctores pueden editar el perfil' }
 
   const { error } = await supabase
     .from('clinics')
