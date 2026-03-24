@@ -228,7 +228,7 @@ export async function updateClinicProfile(data: {
   if (!profile?.clinic_id) return { error: 'No autorizado' }
   if (profile.role !== 'admin' && profile.role !== 'doctor') return { error: 'Solo administradores y doctores pueden editar el perfil' }
 
-  const { error } = await supabase
+  const { data: updated, error } = await supabase
     .from('clinics')
     .update({
       name:          data.name,
@@ -240,8 +240,10 @@ export async function updateClinicProfile(data: {
       updated_at:    new Date().toISOString(),
     })
     .eq('id', profile.clinic_id)
+    .select('id')
 
   if (error) return { error: error.message }
+  if (!updated || updated.length === 0) return { error: 'No se pudo actualizar. Verifica tus permisos.' }
   revalidatePath('/settings')
   return { success: true }
 }

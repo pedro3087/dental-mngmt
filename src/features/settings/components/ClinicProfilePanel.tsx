@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useTransition } from 'react'
+import { useRouter } from 'next/navigation'
 import { Building2, Check, Palette } from 'lucide-react'
 import { updateClinicProfile } from '@/actions/settings'
 import type { ClinicProfile } from '@/actions/settings'
@@ -11,6 +12,7 @@ const PRESET_COLORS = [
 ]
 
 export function ClinicProfilePanel({ initial }: { initial: ClinicProfile | null }) {
+  const router = useRouter()
   const [form, setForm] = useState({
     name:          initial?.name          ?? '',
     phone:         initial?.phone         ?? '',
@@ -32,6 +34,7 @@ export function ClinicProfilePanel({ initial }: { initial: ClinicProfile | null 
       const result = await updateClinicProfile(form)
       if (result.error) { setError(result.error); return }
       setSaved(true)
+      router.refresh()
       setTimeout(() => setSaved(false), 3000)
     })
   }
