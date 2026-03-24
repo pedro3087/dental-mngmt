@@ -3,7 +3,7 @@ import { NextResponse, type NextRequest } from 'next/server'
 import type { UserRole } from '@/types/database'
 
 // Rutas accesibles sin autenticación
-const PUBLIC_ROUTES = ['/login', '/signup', '/forgot-password', '/update-password', '/check-email', '/callback', '/portal']
+const PUBLIC_ROUTES = ['/login', '/signup', '/forgot-password', '/update-password', '/check-email', '/callback', '/portal', '/book', '/api/booking']
 
 // Rutas que requieren rol doctor o admin
 const DOCTOR_ONLY_ROUTES = ['/clinical', '/ai-copilot']
