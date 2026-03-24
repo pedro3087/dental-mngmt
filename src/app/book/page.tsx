@@ -21,7 +21,7 @@ const FALLBACK_SERVICES = [
 ]
 
 export default async function BookPage() {
-  const [servicesRes, settingsRes] = await Promise.all([
+  const [servicesRes, settingsRes, clinicRes] = await Promise.all([
     supabasePublic
       .from('booking_services')
       .select('*')
@@ -33,17 +33,23 @@ export default async function BookPage() {
       .select('*')
       .eq('clinic_id', CLINIC_ID)
       .single(),
+    supabasePublic
+      .from('clinics')
+      .select('name, phone, address')
+      .eq('id', CLINIC_ID)
+      .single(),
   ])
 
   const services = servicesRes.data ?? []
   const settings = settingsRes.data
+  const clinic   = clinicRes.data
 
   return (
     <BookingPage
       clinicId={CLINIC_ID}
-      clinicName="VitalDent"
-      clinicPhone="+52 55 1234 5678"
-      clinicAddress="Ciudad de México, CDMX"
+      clinicName={clinic?.name ?? 'VitalDent'}
+      clinicPhone={clinic?.phone ?? ''}
+      clinicAddress={clinic?.address ?? ''}
       services={services.length > 0 ? services : FALLBACK_SERVICES}
       startHour={settings?.start_hour ?? 9}
       endHour={settings?.end_hour ?? 19}
